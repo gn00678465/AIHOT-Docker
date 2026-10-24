@@ -3,9 +3,6 @@ name: aihot
 x-app: &app
   image: ${AIHOT_IMAGE:-gn00678465/aihot-docker:latest}
   restart: unless-stopped
-  # 直接使用外部絕對路徑，完美適配 Portainer Web 編輯器與 Unraid
-  env_file:
-    - ${ENV_FILE:-/mnt/user/appdata/aihot/.env}
 
 x-backend: &backend
   <<: *app
@@ -15,6 +12,17 @@ x-backend: &backend
     AIHOT_DATA_DIR: /data
     API_BASE_URL: http://api:3001
     INGEST_RATE_LIMIT: ${INGEST_RATE_LIMIT:-10}
+    # 明確將 Portainer 匯入的密鑰直通給容器內部
+    SESSION_SECRET: ${SESSION_SECRET}
+    IMG_PROXY_SIGN_SECRET: ${IMG_PROXY_SIGN_SECRET}
+    ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    LLM_BASE_URL: ${LLM_BASE_URL:-https://api.anthropic.com}
+    LLM_API_KEY: ${LLM_API_KEY}
+    LLM_MODEL: ${LLM_MODEL:-claude-3-5-sonnet-20241022}
+    COLLECT_ENABLED: ${COLLECT_ENABLED:-true}
+    MODEL_CALLS_ENABLED: ${MODEL_CALLS_ENABLED:-true}
+    PRIVATE_FEED_HOSTS: ${PRIVATE_FEED_HOSTS:-}
+    EGRESS_PROXY_URL: ${EGRESS_PROXY_URL:-}
   volumes:
     - ${APP_DATA_DIR:-/mnt/user/appdata/aihot/data}:/data
   depends_on:
@@ -25,8 +33,6 @@ services:
   db:
     image: postgres:17-alpine
     restart: unless-stopped
-    env_file:
-      - ${ENV_FILE:-/mnt/user/appdata/aihot/.env}
     environment:
       POSTGRES_USER: aihot
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aihot}
@@ -39,7 +45,7 @@ services:
       timeout: 5s
       retries: 30
 
-  # 自動執行資料庫遷移與示範種子資料
+  # 自動執行資料庫遷移與種子資料
   setup:
     <<: *backend
     restart: "no"

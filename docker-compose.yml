@@ -3,10 +3,12 @@ name: aihot
 x-app: &app
   image: ${AIHOT_IMAGE:-gn00678465/aihot-docker:latest}
   restart: unless-stopped
+  # 直接使用外部絕對路徑，完美適配 Portainer Web 編輯器與 Unraid
+  env_file:
+    - ${ENV_FILE:-/mnt/user/appdata/aihot/.env}
 
 x-backend: &backend
   <<: *app
-  env_file: .env
   environment: &backend-env
     NODE_ENV: production
     DATABASE_URL: postgres://aihot:${POSTGRES_PASSWORD:-aihot}@db:5432/aihot
@@ -23,6 +25,8 @@ services:
   db:
     image: postgres:17-alpine
     restart: unless-stopped
+    env_file:
+      - ${ENV_FILE:-/mnt/user/appdata/aihot/.env}
     environment:
       POSTGRES_USER: aihot
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aihot}

@@ -14,7 +14,7 @@ if (content.includes("isAnthropic")) {
   process.exit(0);
 }
 
-// 1. Target block for request and body
+// 1. Target block for request and body (Notice: temperature is removed for Anthropic to prevent HTTP 400)
 const originalTarget = `  const { request, temperature, maxTokens, userText } = requestFor(opts, spec);
   const timeoutMs = opts.timeoutMs ?? (circuit ? FAILOVER_TIMEOUT_MS : TIMEOUT_MS);
   let permit: CircuitPermit;
@@ -44,11 +44,11 @@ const patchedTarget = `  const { request, temperature, maxTokens, userText } = r
     ? { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" }
     : { "content-type": "application/json", authorization: \`Bearer \${apiKey}\` };
 
+  // For Anthropic, temperature must NOT be sent for newer/reasoning models (causes HTTP 400)
   const body: Record<string, unknown> = isAnthropic
     ? {
         model: spec.model,
         max_tokens: maxTokens,
-        temperature: Math.min(Math.max(temperature, 0), 1),
         ...(opts.system ? { system: opts.system } : {}),
         messages: [{ role: "user", content: typeof opts.user === "string" ? opts.user : userText }],
         ...(spec.extra ?? {}),
